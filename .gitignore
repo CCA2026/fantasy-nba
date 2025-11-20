@@ -1,0 +1,14 @@
+# Node dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# SQLite database
+app.db
+
+# Uploads
+public/uploads/
+
+# Logs
+*.log

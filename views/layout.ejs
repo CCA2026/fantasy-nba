@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <%- include('partials_head') %>
+</head>
+<script>
+  setTimeout(() => {
+    document.querySelectorAll('.flash').forEach(flash => {
+      flash.style.transition = "opacity 0.5s";
+      flash.style.opacity = "0";
+      setTimeout(() => flash.remove(), 500);
+    });
+  }, 3000);
+</script>
+<body>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="logo" href="/">Fantasy Basketball Club - California College of the Arts</a>
+    <nav class="nav">
+      <% if (user) { %>
+        <span class="balance">💰 <%= user.balance %> coins</span>
+        <form method="post" action="/faucet" class="inline"><button class="btn small">Claim +100</button></form>
+        <a class="btn" href="/markets/new">+ New Market</a>
+        <a class="btn ghost" href="/profile">Profile</a>
+<a class="btn ghost" href="/leaderboard">Leaderboard</a>
+
+        <a class="btn ghost" href="/logout">Logout</a>
+        <% if (user.is_admin) { %><a class="btn warn" href="/admin">Admin</a><% } %>
+      <% } else { %>
+        <a class="btn" href="/login">Log in</a>
+        <a class="btn ghost" href="/register">Register</a>
+      <% } %>
+    </nav>
+  </div>
+</header>
+<main class="container">
+<% if (flash && flash.length) { %>
+  <div class="flash-stack">
+    <% flash.forEach(f => { %>
+      <div class="flash <%= f.type %>">
+        <span><%= f.msg %></span>
+        <button class="flash-close" onclick="this.parentElement.remove()">×</button>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+
+  <%- body %>
+</main>
+<footer class="footer">
+  <div class="container"><p>California College of the Arts (CCA)</p></div>
+</footer>
+</body>
+</html>

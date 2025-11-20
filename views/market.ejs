@@ -1,0 +1,81 @@
+
+<article class="market-hero card">
+  <div class="hero-media">
+    <% if (market.image_filename) { %>
+      <img src="/<%= market.image_filename %>" alt=""/>
+    <% } else { %>
+      <div class="placeholder-img">No image</div>
+    <% } %>
+  </div>
+  <div class="hero-body">
+    <h1><%= market.title %></h1>
+    <p><%= market.description %></p>
+    <div class="badges">
+      <% if (market.is_resolved) { %><span class="badge">Resolved</span><% } else { %><span class="badge good">Open</span><% } %>
+    </div>
+    <div class="prob-row">
+      <% probs.forEach(({option, p}) => { %>
+        <div class="prob">
+          <div class="prob-label"><%= option.name %></div>
+          <div class="prob-bar"><div class="prob-fill" style="width:<%= (p*100).toFixed(1) %>%"></div></div>
+          <div class="prob-num"><%= (p*100).toFixed(1) %>%</div>
+          <% if (user && !market.is_resolved) { %>
+          <form method="post" action="/markets/<%= market.id %>/bet" class="inline bet-form">
+            <input type="hidden" name="option_id" value="<%= option.id %>"/>
+            <input type="number" name="amount" min="1" placeholder="Coins" required/>
+            <button class="btn small">Bet</button>
+          </form>
+          <% if (positions[option.id]) { %><div class="muted">Your shares: <%= positions[option.id] %></div><% } %>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+
+    <section class="card">
+  <h2>Comments</h2>
+
+  <% if (user) { %>
+    <form action="/markets/<%= market.id %>/comments" method="POST" class="comment-form">
+      <textarea name="content" placeholder="Add your comment..." required></textarea>
+      <button class="btn">Post</button>
+    </form>
+  <% } else { %>
+    <p class="muted">Log in to post a comment.</p>
+  <% } %>
+
+  <% if (comments.length === 0) { %>
+    <p class="muted">No comments yet.</p>
+  <% } else { %>
+    <ul class="comments">
+      <% comments.forEach(c => { %>
+        <li><strong><%= c.username %>:</strong> <%= c.content %> <span class="muted">(<%= c.created_at.slice(0,10) %>)</span></li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>
+
+
+    <% if (user && (user.is_admin || market.creator_id === user.id) && !market.is_resolved) { %>
+      <details class="admin-box">
+        <summary>Resolve this market</summary>
+        <form method="post" action="/markets/<%= market.id %>/resolve" class="form inline">
+          <label>Winning option:</label>
+          <select name="winning_option_id">
+            <% probs.forEach(({option})=> { %>
+              <option value="<%= option.id %>"><%= option.name %></option>
+            <% }) %>
+          </select>
+          <button class="btn warn">Resolve</button>
+        </form>
+      </details>
+    <% } else if (market.is_resolved) { %>
+      <p class="muted">
+        Winning option:
+        <strong>
+          <%= (options.find(o => o.id === market.resolved_option_id) || {}).name || '—' %>
+        </strong>
+      </p>
+    <% } %>
+    <p class="muted">Total pool: <%= total %> shares</p>
+  </div>
+</article>

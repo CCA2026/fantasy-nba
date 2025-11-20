@@ -1,0 +1,99 @@
+<h1>Admin Panel</h1>
+
+<div class="grid admin-grid">
+  <!-- USERS SECTION -->
+  <section class="card">
+    <h2>Users</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Balance</th>
+          <th>Admin</th>
+          <th>Banned</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% users.forEach(u => { %>
+          <tr>
+            <td><%= u.id %></td>
+            <td><%= u.username %></td>
+            <td><%= u.balance %></td>
+            <td><%= u.is_admin ? 'Yes' : 'No' %></td>
+            <td><%= u.is_banned ? 'Yes' : 'No' %></td>
+            <td class="actions">
+              <form method="post" action="/admin/set-balance" class="inline">
+                <input type="hidden" name="user_id" value="<%= u.id %>"/>
+                <input type="number" name="balance" value="<%= u.balance %>" class="w-10ch"/>
+                <button class="btn small">Set</button>
+              </form>
+              <form method="post" action="/admin/ban-toggle" class="inline">
+                <input type="hidden" name="user_id" value="<%= u.id %>"/>
+                <button class="btn small warn"><%= u.is_banned ? 'Unban' : 'Ban' %></button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- MARKETS SECTION -->
+  <section class="card">
+    <h2>Markets</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Title</th>
+          <th>Creator</th>
+          <th>Resolved</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% markets.forEach(m => { %>
+          <tr>
+            <td><%= m.id %></td>
+            <td><%= m.title %></td>
+            <td><%= m.creator_id %></td>
+            <td><%= m.is_resolved ? 'Yes' : 'No' %></td>
+            <td class="actions">
+              <!-- ✅ FIXED: Remove form now points to correct route -->
+              <form method="post" action="/admin/remove/<%= m.id %>" class="inline"
+                    onsubmit="return confirm('Are you sure you want to permanently delete this market?');">
+                <button class="btn small danger">Remove</button>
+              </form>
+
+              <% if (!m.is_resolved) { %>
+                <details class="inline">
+                  <summary class="btn small">Resolve</summary>
+                  <form method="post" action="/markets/<%= m.id %>/resolve" class="inline">
+                    <select name="winning_option_id">
+                      <option disabled selected>Pick on market page</option>
+                    </select>
+                    <button class="btn small warn">Go</button>
+                  </form>
+                </details>
+              <% } %>
+
+              <details class="inline">
+                <summary class="btn small ghost">Edit</summary>
+                <form method="post" action="/admin/edit-market" class="inline">
+                  <input type="hidden" name="market_id" value="<%= m.id %>"/>
+                  <input name="title" placeholder="Title" class="w-20ch"/>
+                  <input name="description" placeholder="Description" class="w-30ch"/>
+                  <button class="btn small">Save</button>
+                </form>
+              </details>
+
+              <a class="btn small" href="/markets/<%= m.id %>">Open</a>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </section>
+</div>

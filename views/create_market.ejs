@@ -1,0 +1,16 @@
+
+<section class="card">
+  <h1>Create a new market</h1>
+  <form method="post" enctype="multipart/form-data" class="form">
+    <label>Title</label>
+    <input name="title" maxlength="160" required/>
+    <label>Description</label>
+    <textarea name="description" rows="5" required></textarea>
+    <label>Options (one per line)</label>
+    <textarea name="options" rows="4" placeholder="Yes
+No" required></textarea>
+    <label>Image (optional)</label>
+    <input type="file" name="image" accept="image/*"/>
+    <button class="btn">Create</button>
+  </form>
+</section>

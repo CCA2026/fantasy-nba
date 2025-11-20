@@ -1,0 +1,52 @@
+
+<section class="card">
+  <h1>👤 My Profile</h1>
+  <p class="muted">Welcome, <strong><%= user.username %></strong>. Balance: 💰 <%= user.balance %> coins</p>
+    <div class="grid grid-cols-2 gap-3 mt-2">
+    <div class="mini-card">💰 Balance: <%= stats.balance %> coins</div>
+    <div class="mini-card">📊 Total Bets: <%= stats.total_bets %></div>
+    <div class="mini-card">🪙 Markets Created: <%= stats.total_markets %></div>
+    <div class="mini-card">🏆 Wins: <%= stats.total_won %> coins</div>
+  </div>
+</section>
+
+</section>
+
+<section class="card">
+  <h2>My Created Markets</h2>
+  <% if (markets.length === 0) { %>
+    <p class="muted">You haven’t created any markets yet.</p>
+  <% } else { %>
+    <ul>
+      <% markets.forEach(m => { %>
+        <li>
+          <a href="/markets/<%= m.id %>"><%= m.title %></a>
+          <% if (m.is_resolved) { %><span class="badge">Resolved</span><% } %>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>
+
+<section class="card">
+  <h2>My Betting History</h2>
+  <% if (trades.length === 0) { %>
+    <p class="muted">No bets placed yet.</p>
+  <% } else { %>
+    <table class="table">
+      <thead>
+        <tr><th>Market</th><th>Option</th><th>Amount</th><th>Date</th></tr>
+      </thead>
+      <tbody>
+        <% trades.forEach(t => { %>
+          <tr>
+            <td><a href="/markets/<%= t.market_id %>"><%= t.market_title %></a></td>
+            <td><%= t.option_name %></td>
+            <td><%= t.amount %></td>
+            <td><%= t.created_at.slice(0,10) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</section>

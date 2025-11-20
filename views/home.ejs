@@ -1,0 +1,29 @@
+
+<h1>Markets</h1>
+<div class="filter-bar">
+  <a href="/?filter=all" class="btn <%= filter==='all'?'active':'' %>">All</a>
+  <a href="/?filter=open" class="btn <%= filter==='open'?'active':'' %>">Open</a>
+  <a href="/?filter=resolved" class="btn <%= filter==='resolved'?'active':'' %>">Resolved</a>
+  <% if (user) { %>
+    <a href="/?filter=mine" class="btn <%= filter==='mine'?'active':'' %>">My Markets</a>
+  <% } %>
+</div>
+
+<div class="grid">
+  <% if (!markets.length) { %>
+    <p class="muted">No markets yet. Be the first to <a href="/markets/new">create one</a>.</p>
+  <% } %>
+  <% markets.forEach(m => { %>
+    <a class="market-card" href="/markets/<%= m.id %>">
+      <% if (m.image_filename) { %><img src="/<%= m.image_filename %>" alt=""/><% } %>
+      <div class="mc-body">
+        <h3><%= m.title %></h3>
+        <p class="muted"><%= m.description.substring(0,120) %><%= m.description.length>120?'...':'' %></p>
+        <div class="meta">
+          <span><%= (m.created_at||'').slice(0,10) %></span>
+          <% if (m.is_resolved) { %><span class="badge">Resolved</span><% } else { %><span class="badge good">Open</span><% } %>
+        </div>
+      </div>
+    </a>
+  <% }) %>
+</div>
