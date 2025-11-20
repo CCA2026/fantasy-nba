@@ -96,6 +96,9 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 2 * 1024 * 1024 } }); // 2MB
 
+
+
+
 // ----- App config -----
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -106,6 +109,16 @@ app.use(session({
   resave: false,
   saveUninitialized: false
 }));
+
+// ---- Correct Flash Middleware ----
+// ---- Correct Flash Middleware ----
+app.use((req, res, next) => {
+  res.locals.flash = req.session.flash || [];
+  req.session.flash = []; // clear immediately so they never reappear
+  next();
+});
+
+
 
 // helpers
 function requireLogin(req, res, next) {
@@ -202,8 +215,8 @@ app.use((req, res, next) => {
 });
 
 app.get('/gate', (req, res) => {
-  res.render('gate', { user: currentUser(req), flash: req.session.flash || [] });
-  req.session.flash = [];
+  res.render('gate', { user: currentUser(req)});
+;
 });
 app.post('/gate', (req, res) => {
   const entered = (req.body.password || '').trim();
@@ -229,8 +242,8 @@ app.post('/gate', (req, res) => {
 
 // ---- Auth ----
 app.get('/register', (req, res) => {
-  res.render('register', { user: currentUser(req), flash: req.session.flash || [] });
-  req.session.flash = [];
+  res.render('register', { user: currentUser(req)});
+;
 });
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;
@@ -250,8 +263,8 @@ app.post('/register', async (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  res.render('login', { user: currentUser(req), flash: req.session.flash || [] });
-  req.session.flash = [];
+  res.render('login', { user: currentUser(req)});
+ ;
 });
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
@@ -316,19 +329,19 @@ app.get('/', requireGate, (req, res) => {
     res.render('home', {
       user: currentUser(req),
       markets: markets || [],
-      flash: req.session.flash || [],
+     
       title: 'Markets',
       filter,
     });
-    req.session.flash = [];
+
   });
 });
 
 
 // Create market
 app.get('/markets/new', requireLogin, (req, res) => {
-  res.render('create_market', { user: currentUser(req), flash: req.session.flash || [] });
-  req.session.flash = [];
+  res.render('create_market', { user: currentUser(req)});
+
 });
 app.post('/markets/new', requireLogin, upload.single('image'), (req, res) => {
   const { title, description, options } = req.body;
@@ -405,9 +418,9 @@ app.get('/markets/:id', (req, res) => {
               probs,
               total,
               positions, // 👈 added here
-              flash: req.session.flash || [],
+             
             });
-            req.session.flash = [];
+          
           }
         );
       });
@@ -553,8 +566,8 @@ app.post('/markets/:id/comments', requireLogin, (req, res) => {
 app.get('/admin', requireAdmin, (req, res) => {
   db.all(`SELECT * FROM users ORDER BY id`, (e, users)=>{
     db.all(`SELECT * FROM markets ORDER BY datetime(created_at) DESC`, (e2, markets)=>{
-      res.render('admin', { user: currentUser(req), users: users||[], markets: markets||[], flash: req.session.flash || [] });
-      req.session.flash = [];
+      res.render('admin', { user: currentUser(req), users: users||[], markets: markets||[] });
+    
     });
   });
 });
@@ -639,10 +652,10 @@ app.get('/profile', requireLogin, (req, res) => {
             markets: markets || [],
             trades: trades || [],
             stats,
-            flash: req.session.flash || [],
+           
             title: 'My Profile',
           });
-          req.session.flash = [];
+         
         }
       );
     });
@@ -659,10 +672,10 @@ app.get('/leaderboard', (req, res) => {
     res.render('leaderboard', {
       user: currentUser(req),
       users: users || [],
-      flash: req.session.flash || [],
+   
       title: 'Leaderboard'
     });
-    req.session.flash = [];
+   
   });
 });
 
@@ -670,6 +683,6 @@ app.get('/leaderboard', (req, res) => {
 function renderFlash(req, res, next){ next(); }
 
 // 404
-app.use((req, res)=> res.status(404).render('error', { code: 404, message: 'Not found', user: currentUser(req), flash: req.session.flash || [] }));
+app.use((req, res)=> res.status(404).render('error', { code: 404, message: 'Not found', user: currentUser(req) }));
 
 app.listen(PORT, ()=> console.log(`California College of the Arts running on http://127.0.0.1:${PORT}`));

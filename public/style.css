@@ -183,3 +183,11 @@ a:hover{text-decoration:underline}
 .flash-close:hover {
   opacity: 0.7;
 }
+.flash {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.flash.show {
+  opacity: 1;
+}
