@@ -9,6 +9,15 @@
   </div>
   <div class="hero-body">
     <h1><%= market.title %></h1>
+
+    <div class="market-meta">
+  <span class="badge category"><%= market.category %></span>
+
+  <% tags.forEach(t => { %>
+    <span class="badge tag"><%= t.name %></span>
+  <% }) %>
+</div>
+
     <p><%= market.description %></p>
     <div class="badges">
       <% if (market.is_resolved) { %><span class="badge">Resolved</span><% } else { %><span class="badge good">Open</span><% } %>

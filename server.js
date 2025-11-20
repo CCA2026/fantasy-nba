@@ -63,6 +63,8 @@ db.serialize(() => {
     FOREIGN KEY (market_id) REFERENCES markets(id),
     FOREIGN KEY (option_id) REFERENCES options(id)
   )`);
+  db.run(`ALTER TABLE markets ADD COLUMN category TEXT`, () => {});
+
 
   // seed admin if none exists
   db.get(`SELECT COUNT(*) as c FROM users WHERE is_admin = 1`, async (err, row) => {
@@ -82,6 +84,22 @@ db.serialize(() => {
     }
   });
 });
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS market_tags (
+    market_id INTEGER,
+    tag_id INTEGER,
+    FOREIGN KEY (market_id) REFERENCES markets(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+  )
+`);
 
 // ----- Uploads -----
 const uploadDir = path.join(__dirname, 'public', 'uploads');
@@ -344,26 +362,56 @@ app.get('/markets/new', requireLogin, (req, res) => {
 
 });
 app.post('/markets/new', requireLogin, upload.single('image'), (req, res) => {
-  const { title, description, options } = req.body;
+  const { title, description, options, tags, category } = req.body;
   const opts = (options || '').split('\n').map(s => s.trim()).filter(Boolean);
+  
   if (!title || !description || opts.length < 2) {
-    (req.session.flash ||= []).push({ type: 'error', msg: 'Title, description, and at least two options required.' });
+    req.session.flash = [{ type: 'error', msg: 'Title, description, and at least two options required.' }];
     return res.redirect('/markets/new');
   }
+
   const image_filename = req.file ? ('uploads/' + req.file.filename) : null;
-  db.run(`INSERT INTO markets(creator_id, title, description, image_filename) VALUES(?,?,?,?)`,
-    [req.session.user.id, title.trim(), description.trim(), image_filename],
-    function(err){
-      if (err) { console.error(err); (req.session.flash ||= []).push({ type: 'error', msg: 'Error creating market.' }); return res.redirect('/markets/new'); }
+
+  db.run(
+    `INSERT INTO markets(creator_id, title, description, image_filename, category)
+     VALUES(?,?,?,?,?)`,
+    [req.session.user.id, title.trim(), description.trim(), image_filename, category],
+    function (err) {
+      if (err) {
+        console.error(err);
+        req.session.flash = [{ type: 'error', msg: 'Error creating market.' }];
+        return res.redirect('/markets/new');
+      }
+
       const mid = this.lastID;
+
+      // OPTIONS
       const stmt = db.prepare(`INSERT INTO options(market_id, name, shares) VALUES(?,?,0)`);
       opts.forEach(name => stmt.run(mid, name));
       stmt.finalize();
-      (req.session.flash ||= []).push({ type: 'success', msg: 'Market created!' });
+
+      // TAGS
+      const tagList = (tags || "")
+        .split(',')
+        .map(t => t.trim().toLowerCase())
+        .filter(Boolean);
+
+      tagList.forEach(tag => {
+        db.run(`INSERT OR IGNORE INTO tags(name) VALUES(?)`, [tag], () => {
+          db.get(`SELECT id FROM tags WHERE name=?`, [tag], (err2, row) => {
+            if (row) {
+              db.run(`INSERT INTO market_tags(market_id, tag_id) VALUES(?,?)`, [mid, row.id]);
+            }
+          });
+        });
+      });
+
+      req.session.flash = [{ type: 'success', msg: 'Market created!' }];
       res.redirect(`/markets/${mid}`);
     }
   );
 });
+
 db.run(`CREATE TABLE IF NOT EXISTS comments (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   market_id INTEGER,
@@ -382,6 +430,7 @@ app.get('/markets/:id', (req, res) => {
 
     db.all(`SELECT * FROM options WHERE market_id=?`, [id], (err2, options) => {
       db.all(`SELECT * FROM trades WHERE market_id=?`, [id], (err3, trades) => {
+
         const totalShares = options.reduce((sum, o) => sum + (o.shares || 0), 0);
         const probs = options.map(option => {
           const p = totalShares ? (option.shares || 0) / totalShares : 0;
@@ -389,9 +438,9 @@ app.get('/markets/:id', (req, res) => {
         });
         const total = totalShares;
 
-        // ✅ New: calculate positions for logged-in user
         let positions = {};
         const user = req.session.user;
+
         if (user) {
           trades
             .filter(t => t.user_id === user.id)
@@ -400,7 +449,7 @@ app.get('/markets/:id', (req, res) => {
             });
         }
 
-        // ✅ Render with positions
+        // Load comments
         db.all(
           `SELECT c.*, u.username 
            FROM comments c 
@@ -409,24 +458,37 @@ app.get('/markets/:id', (req, res) => {
            ORDER BY datetime(c.created_at) DESC`,
           [id],
           (err4, comments) => {
-            res.render('market', {
-              user,
-              market,
-              options,
-              trades,
-              comments,
-              probs,
-              total,
-              positions, // 👈 added here
-             
-            });
-          
+
+            // ---- STEP 5: Load Tags ----
+            db.all(
+              `SELECT tags.name
+               FROM tags
+               JOIN market_tags ON tags.id = market_tags.tag_id
+               WHERE market_tags.market_id = ?`,
+              [id],
+              (err5, tags) => {
+
+                res.render('market', {
+                  user,
+                  market,
+                  options,
+                  trades,
+                  comments,
+                  probs,
+                  total,
+                  positions,
+                  tags    // <--- new
+                });
+
+              }
+            );
           }
         );
       });
     });
   });
 });
+
 
 
 
@@ -459,6 +521,8 @@ app.post('/markets/:id/bet', requireLogin, (req, res) => {
     });
   });
 });
+
+
 
 // Resolve (creator or admin)
 // =====================
@@ -496,6 +560,8 @@ app.post('/markets/:id/resolve', requireLogin, (req, res) => {
         });
         return;
       }
+
+      
 
       if (winningShares <= 0) {
         // No one bet on winning option — no payouts
