@@ -33,7 +33,11 @@ db.serialize(() => {
     is_banned INTEGER DEFAULT 0,
     balance INTEGER DEFAULT 500,
     last_faucet_date TEXT
+
+
   )`);
+  db.run(`ALTER TABLE markets ADD COLUMN category TEXT`, () => {});
+
   db.run(`CREATE TABLE IF NOT EXISTS markets(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     creator_id INTEGER NOT NULL,
@@ -86,6 +90,8 @@ db.serialize(() => {
   });
 });
 db.run(`ALTER TABLE users ADD COLUMN last_claim INTEGER`, () => {});
+
+
 
 db.run(`
   CREATE TABLE IF NOT EXISTS tags (
@@ -398,54 +404,59 @@ app.get('/markets/new', requireLogin, (req, res) => {
 });
 app.post('/markets/new', requireLogin, upload.single('image'), (req, res) => {
   const { title, description, options, tags, category } = req.body;
-  const opts = (options || '').split('\n').map(s => s.trim()).filter(Boolean);
-  
+
+  const opts = (options || "")
+    .split("\n")
+    .map(s => s.trim())
+    .filter(Boolean);
+
   if (!title || !description || opts.length < 2) {
-    req.session.flash = [{ type: 'error', msg: 'Title, description, and at least two options required.' }];
-    return res.redirect('/markets/new');
+    req.session.flash = [{ type: "error", msg: "Title, description, and at least two options required." }];
+    return res.redirect("/markets/new");
   }
 
-  const image_filename = req.file ? ('uploads/' + req.file.filename) : null;
+  const image_filename = req.file ? "uploads/" + req.file.filename : null;
 
   db.run(
-    `INSERT INTO markets(creator_id, title, description, image_filename, category)
-     VALUES(?,?,?,?,?)`,
+    `INSERT INTO markets (creator_id, title, description, image_filename, category)
+     VALUES (?, ?, ?, ?, ?)`,
     [req.session.user.id, title.trim(), description.trim(), image_filename, category],
     function (err) {
       if (err) {
-        console.error(err);
-        req.session.flash = [{ type: 'error', msg: 'Error creating market.' }];
-        return res.redirect('/markets/new');
+        console.error("MARKET ERROR:", err);
+        req.session.flash = [{ type: "error", msg: "Error creating market." }];
+        return res.redirect("/markets/new");
       }
 
-      const mid = this.lastID;
+      const marketId = this.lastID;
 
-      // OPTIONS
-      const stmt = db.prepare(`INSERT INTO options(market_id, name, shares) VALUES(?,?,0)`);
-      opts.forEach(name => stmt.run(mid, name));
+      // Insert options
+      const stmt = db.prepare(`INSERT INTO options (market_id, name, shares) VALUES (?, ?, 0)`);
+      opts.forEach(name => stmt.run(marketId, name));
       stmt.finalize();
 
-      // TAGS
+      // Tags
       const tagList = (tags || "")
-        .split(',')
+        .split(",")
         .map(t => t.trim().toLowerCase())
         .filter(Boolean);
 
       tagList.forEach(tag => {
-        db.run(`INSERT OR IGNORE INTO tags(name) VALUES(?)`, [tag], () => {
+        db.run(`INSERT OR IGNORE INTO tags(name) VALUES (?)`, [tag], () => {
           db.get(`SELECT id FROM tags WHERE name=?`, [tag], (err2, row) => {
             if (row) {
-              db.run(`INSERT INTO market_tags(market_id, tag_id) VALUES(?,?)`, [mid, row.id]);
+              db.run(`INSERT INTO market_tags(market_id, tag_id) VALUES (?, ?)`, [marketId, row.id]);
             }
           });
         });
       });
 
-      req.session.flash = [{ type: 'success', msg: 'Market created!' }];
-      res.redirect(`/markets/${mid}`);
+      req.session.flash = [{ type: "success", msg: "Market created!" }];
+      res.redirect(`/markets/${marketId}`);
     }
   );
 });
+
 
 db.run(`CREATE TABLE IF NOT EXISTS comments (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
