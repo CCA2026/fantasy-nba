@@ -1,20 +1,23 @@
+<h1>Leaderboard</h1>
 
-<section class="card">
-  <h1>🏆 Leaderboard</h1>
-  <p class="muted">Top 50 users ranked by coin balance</p>
+<table class="table">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>User</th>
+      <th>Balance</th>
+    </tr>
+  </thead>
 
-  <table class="table">
-    <thead>
-      <tr><th>Rank</th><th>Username</th><th>Balance</th></tr>
-    </thead>
-    <tbody>
-      <% users.forEach((u, i) => { %>
-        <tr>
-          <td><%= i + 1 %></td>
-          <td><%= u.username %></td>
-          <td>💰 <%= u.balance %></td>
-        </tr>
-      <% }) %>
-    </tbody>
-  </table>
-</section>
+  <tbody>
+    <% users.forEach((u, i) => { %>
+      <tr>
+        <td><%= i + 1 %></td>
+        <td>
+       <a href="/user/<%= u.id %>"><%= u.username %></a>
+        </td>
+        <td>💰 <%= u.balance %></td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>

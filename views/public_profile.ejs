@@ -1,0 +1,27 @@
+<h1>👤 <%= profile.username %></h1>
+
+<p class="muted">Public Profile</p>
+
+<section class="card">
+  <h2>Stats</h2>
+  <ul>
+    <li>Total Bets: <%= stats.total_bets %></li>
+    <li>Markets Created: <%= stats.total_markets %></li>
+    <li>Total Coins Won: <%= stats.total_won %></li>
+    <li>Balance: 💰 <%= profile.balance %> coins</li>
+  </ul>
+</section>
+
+<h2>Recent Bets</h2>
+<section class="card">
+  <% if (!trades.length) { %>
+    <p class="muted">No bets yet.</p>
+  <% } %>
+  <% trades.forEach(t => { %>
+    <div class="trade-row">
+      Bet <strong><%= t.amount %></strong> on
+      <strong><%= t.option_name %></strong>
+      in <a href="/markets/<%= t.market_id %>"><%= t.market_title %></a>
+    </div>
+  <% }) %>
+</section>

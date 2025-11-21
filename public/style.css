@@ -191,3 +191,63 @@ a:hover{text-decoration:underline}
 .flash.show {
   opacity: 1;
 }
+/* ===============================
+   MARKET FILTER BAR + SEARCH BAR
+================================*/
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  background: #ffffff;
+  padding: 12px 15px;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  margin-bottom: 20px;
+}
+
+.filter-bar select,
+.filter-bar input[type="text"] {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+  min-width: 150px;
+  transition: 0.2s ease;
+}
+
+.filter-bar input[type="text"]:focus,
+.filter-bar select:focus {
+  border-color: #4e73df;
+  box-shadow: 0 0 0 3px rgba(78,115,223,0.25);
+  outline: none;
+}
+
+.filter-bar button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  background: #4e73df;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.filter-bar button:hover {
+  background: #3c5ec0;
+}
+
+/* Tag style (displayed on market cards) */
+.market-tag {
+  display: inline-block;
+  background: #e8f0ff;
+  color: #3c5ec0;
+  padding: 4px 8px;
+  margin-right: 4px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+

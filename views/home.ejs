@@ -1,27 +1,74 @@
-
 <h1>Markets</h1>
+
+<!-- Unified Filter/Search Bar -->
 <div class="filter-bar">
-  <a href="/?filter=all" class="btn <%= filter==='all'?'active':'' %>">All</a>
-  <a href="/?filter=open" class="btn <%= filter==='open'?'active':'' %>">Open</a>
-  <a href="/?filter=resolved" class="btn <%= filter==='resolved'?'active':'' %>">Resolved</a>
-  <% if (user) { %>
-    <a href="/?filter=mine" class="btn <%= filter==='mine'?'active':'' %>">My Markets</a>
-  <% } %>
+  <form method="get" action="/" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+
+    <!-- Market Type Filter -->
+    <select name="filter">
+      <option value="all" <%= filter === 'all' ? 'selected' : '' %>>All</option>
+      <option value="open" <%= filter === 'open' ? 'selected' : '' %>>Open</option>
+      <option value="resolved" <%= filter === 'resolved' ? 'selected' : '' %>>Resolved</option>
+      <% if (user) { %>
+        <option value="mine" <%= filter === 'mine' ? 'selected' : '' %>>My Markets</option>
+      <% } %>
+    </select>
+
+    <!-- Category Filter -->
+    <select name="category">
+      <option value="all" <%= category === 'all' ? 'selected' : '' %>>All Categories</option>
+      <option value="Sports" <%= category === 'Sports' ? 'selected' : '' %>>Sports</option>
+      <option value="A2C" <%= category === 'A2C' ? 'selected' : '' %>>A2C</option>
+      <option value="Politics" <%= category === 'Politics' ? 'selected' : '' %>>Politics</option>
+      <option value="Entertainment" <%= category === 'Entertainment' ? 'selected' : '' %>>Entertainment</option>
+      <option value="Other" <%= category === 'Other' ? 'selected' : '' %>>Other</option>
+    </select>
+
+    <!-- Search -->
+    <input 
+      type="text" 
+      name="search" 
+      placeholder="Search markets..." 
+      value="<%= search || '' %>"
+      style="flex:1;"
+    >
+
+    <button class="btn small">Apply</button>
+  </form>
 </div>
 
+<!-- Market List -->
 <div class="grid">
   <% if (!markets.length) { %>
-    <p class="muted">No markets yet. Be the first to <a href="/markets/new">create one</a>.</p>
+    <p class="muted">No markets match your filters. Try adjusting them.</p>
   <% } %>
+
   <% markets.forEach(m => { %>
     <a class="market-card" href="/markets/<%= m.id %>">
-      <% if (m.image_filename) { %><img src="/<%= m.image_filename %>" alt=""/><% } %>
+      <% if (m.image_filename) { %>
+        <img src="/<%= m.image_filename %>" alt="">
+      <% } %>
+
       <div class="mc-body">
         <h3><%= m.title %></h3>
-        <p class="muted"><%= m.description.substring(0,120) %><%= m.description.length>120?'...':'' %></p>
+
+        <p class="muted">
+          <%= m.description.substring(0,120) %><%= m.description.length > 120 ? '...' : '' %>
+        </p>
+
+        <!-- Category Badge -->
+        <% if (m.category) { %>
+          <span class="market-tag"><%= m.category %></span>
+        <% } %>
+
         <div class="meta">
-          <span><%= (m.created_at||'').slice(0,10) %></span>
-          <% if (m.is_resolved) { %><span class="badge">Resolved</span><% } else { %><span class="badge good">Open</span><% } %>
+          <span><%= (m.created_at || '').slice(0,10) %></span>
+
+          <% if (m.is_resolved) { %>
+            <span class="badge">Resolved</span>
+          <% } else { %>
+            <span class="badge good">Open</span>
+          <% } %>
         </div>
       </div>
     </a>

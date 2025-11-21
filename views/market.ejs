@@ -55,11 +55,20 @@
   <% if (comments.length === 0) { %>
     <p class="muted">No comments yet.</p>
   <% } else { %>
-    <ul class="comments">
-      <% comments.forEach(c => { %>
-        <li><strong><%= c.username %>:</strong> <%= c.content %> <span class="muted">(<%= c.created_at.slice(0,10) %>)</span></li>
-      <% }) %>
-    </ul>
+  <ul class="comments">
+  <% comments.forEach(c => { %>
+    <li>
+      <strong>
+      <a href="/user/<%= c.user_id %>"><%= c.username %></a>
+
+
+      :</strong>
+      <%= c.content %>
+      <span class="muted">(<%= c.created_at.slice(0,10) %>)</span>
+    </li>
+  <% }) %>
+</ul>
+
   <% } %>
 </section>
 

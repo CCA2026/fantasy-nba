@@ -12,7 +12,8 @@ const bcrypt = require('bcryptjs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DB_PATH = '/var/data/app.db';
+let DB_PATH = '/var/data/app.db';
+// DB_PATH = path.join(__dirname, 'app.db');
 
 const expressLayouts = require('express-ejs-layouts');
 app.use(expressLayouts);
@@ -84,6 +85,7 @@ db.serialize(() => {
     }
   });
 });
+db.run(`ALTER TABLE users ADD COLUMN last_claim INTEGER`, () => {});
 
 db.run(`
   CREATE TABLE IF NOT EXISTS tags (
@@ -130,6 +132,8 @@ app.use(session({
   resave: false,
   saveUninitialized: false
 }));
+
+
 
 // ---- Correct Flash Middleware ----
 // ---- Correct Flash Middleware ----
@@ -305,6 +309,12 @@ app.post('/login', (req, res) => {
     }
     req.session.user = { id: user.id, username: user.username, is_admin: !!user.is_admin, balance: user.balance };
     (req.session.flash ||= []).push({ type: 'success', msg: 'Welcome back!' });
+    const now = Math.floor(Date.now() / 1000);
+
+db.run(`UPDATE users SET last_claim=? WHERE id=? AND (last_claim IS NULL OR last_claim=0)`,
+  [now, user.id]
+);
+
     res.redirect('/');
   });
 });
@@ -323,9 +333,9 @@ app.post('/faucet', requireLogin, (req, res) => {
       (req.session.flash ||= []).push({ type: 'error', msg: 'Already claimed today.' });
       return res.redirect('/');
     }
-    db.run(`UPDATE users SET balance = balance + 100, last_faucet_date = ? WHERE id = ?`, [todayStr(), uid], (e) => {
-      if (!e) req.session.user.balance = (row.balance || 0) + 100;
-      (req.session.flash ||= []).push({ type: 'success', msg: '+100 coins added!' });
+    db.run(`UPDATE users SET balance = balance + 250, last_faucet_date = ? WHERE id = ?`, [todayStr(), uid], (e) => {
+      if (!e) req.session.user.balance = (row.balance || 0) + 250;
+      (req.session.flash ||= []).push({ type: 'success', msg: '+250 coins added!' });
       res.redirect('/');
     });
   });
@@ -335,30 +345,50 @@ app.post('/faucet', requireLogin, (req, res) => {
 app.get('/', requireGate, (req, res) => {
   const filter = req.query.filter || 'all';
   const category = req.query.category || 'all';
+  const search = (req.query.search || '').trim().toLowerCase();
 
   const uid = req.session.user ? req.session.user.id : 0;
 
-  let query = 'SELECT * FROM markets ORDER BY datetime(created_at) DESC';
+  let query = "SELECT * FROM markets WHERE 1=1";
   const params = [];
 
-  if (filter === 'open') query = 'SELECT * FROM markets WHERE is_resolved=0 ORDER BY datetime(created_at) DESC';
-  else if (filter === 'resolved') query = 'SELECT * FROM markets WHERE is_resolved=1 ORDER BY datetime(created_at) DESC';
-  else if (filter === 'mine' && uid) {
-    query = 'SELECT * FROM markets WHERE creator_id=? ORDER BY datetime(created_at) DESC';
+  // FILTER: open / resolved / mine
+  if (filter === "open") {
+    query += " AND is_resolved = 0";
+  } else if (filter === "resolved") {
+    query += " AND is_resolved = 1";
+  } else if (filter === "mine" && uid) {
+    query += " AND creator_id = ?";
     params.push(uid);
   }
 
+  // CATEGORY FILTER
+  if (category !== "all") {
+    query += " AND category = ?";
+    params.push(category);
+  }
+
+  // SEARCH by title or description
+  if (search.length > 0) {
+    query += " AND (LOWER(title) LIKE ? OR LOWER(description) LIKE ?)";
+    params.push(`%${search}%`, `%${search}%`);
+  }
+
+  // Default ordering
+  query += " ORDER BY datetime(created_at) DESC";
+
   db.all(query, params, (err, markets) => {
-    res.render('home', {
+    res.render("home", {
       user: currentUser(req),
       markets: markets || [],
-     
-      title: 'Markets',
+      title: "Markets",
       filter,
+      category,
+      search
     });
-
   });
 });
+
 
 
 // Create market
@@ -733,12 +763,73 @@ app.get('/profile', requireLogin, (req, res) => {
   });
 });
 
+// ======================
+// PUBLIC USER PROFILE
+// ======================
+// Public profile page
+// ======================
+// PUBLIC USER PROFILE PAGE
+// ======================
+app.get('/user/:id', (req, res) => {
+  const uid = req.params.id;
+
+  db.get(
+    `SELECT id, username, balance FROM users WHERE id = ?`,
+    [uid],
+    (err, userRow) => {
+      if (err || !userRow) {
+        return res.status(404).render('error', {
+          code: 404,
+          message: 'User not found',
+          user: currentUser(req)
+        });
+      }
+
+      // Load user stats
+      const statsQuery = `
+        SELECT
+          (SELECT COUNT(*) FROM trades WHERE user_id = ?) AS total_bets,
+          (SELECT COUNT(*) FROM markets WHERE creator_id = ?) AS total_markets,
+          (SELECT COALESCE(SUM(amount),0)
+             FROM trades t JOIN markets m
+             ON t.market_id = m.id
+             WHERE t.user_id = ?
+             AND m.is_resolved = 1
+             AND t.option_id = m.resolved_option_id) AS total_won
+      `;
+
+      db.get(statsQuery, [uid, uid, uid], (err2, stats) => {
+        if (err2) stats = { total_bets: 0, total_markets: 0, total_won: 0 };
+
+        db.all(
+          `SELECT t.*, m.title as market_title, o.name as option_name
+           FROM trades t
+           JOIN markets m ON t.market_id = m.id
+           JOIN options o ON t.option_id = o.id
+           WHERE t.user_id = ?
+           ORDER BY datetime(t.created_at) DESC`,
+          [uid],
+          (err3, trades) => {
+            res.render('public_profile', {
+              profile: userRow,  // 👈 Public profile user
+              stats,
+              trades: trades || [],
+              user: currentUser(req)  // logged-in user
+            });
+          }
+        );
+      });
+    }
+  );
+});
+
 
 // ======================
 //  LEADERBOARD
 // ======================
 app.get('/leaderboard', (req, res) => {
-  const q = `SELECT username, balance FROM users WHERE is_banned = 0 ORDER BY balance DESC LIMIT 50`;
+const q = `SELECT id, username, balance FROM users WHERE is_banned = 0 ORDER BY balance DESC LIMIT 50`;
+
   db.all(q, [], (err, users) => {
     res.render('leaderboard', {
       user: currentUser(req),
