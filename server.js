@@ -102,7 +102,10 @@ db.run(`
 `);
 
 // ----- Uploads -----
-const uploadDir = path.join(__dirname, 'public', 'uploads');
+const uploadDir = '/var/data/uploads';
+app.use('/uploads', express.static('/var/data/uploads'));
+
+
 fs.mkdirSync(uploadDir, { recursive: true });
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
