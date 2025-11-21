@@ -730,6 +730,67 @@ app.post('/markets/:id/edit', requireLogin, upload.single('image'), (req, res) =
     );
   });
 });
+// ======================
+// NEWS PAGE
+// ======================
+app.get('/news', (req, res) => {
+
+  // 1. Highest-volume markets
+  const volumeQuery = `
+    SELECT 
+      m.id, 
+      m.title, 
+      m.created_at,
+      m.is_resolved,
+      SUM(t.amount) AS volume
+    FROM markets m
+    LEFT JOIN trades t ON t.market_id = m.id
+    GROUP BY m.id
+    ORDER BY volume DESC
+    LIMIT 10;
+  `;
+
+  // 2. Recent bets
+  const recentBetsQuery = `
+    SELECT 
+      t.user_id,
+      u.username,
+      t.market_id,
+      m.title AS market_title,
+      t.option_id,
+      o.name AS option_name,
+      t.amount,
+      t.created_at
+    FROM trades t
+    JOIN users u ON u.id = t.user_id
+    JOIN markets m ON m.id = t.market_id
+    JOIN options o ON o.id = t.option_id
+    ORDER BY datetime(t.created_at) DESC
+    LIMIT 20;
+  `;
+
+  // 3. Recently created markets
+  const newMarketsQuery = `
+    SELECT id, title, created_at 
+    FROM markets
+    ORDER BY datetime(created_at) DESC
+    LIMIT 10;
+  `;
+
+  db.all(volumeQuery, [], (err1, volumeMarkets) => {
+    db.all(recentBetsQuery, [], (err2, recentBets) => {
+      db.all(newMarketsQuery, [], (err3, newMarkets) => {
+        res.render('news', {
+          user: currentUser(req),
+          volumeMarkets: volumeMarkets || [],
+          recentBets: recentBets || [],
+          newMarkets: newMarkets || []
+        });
+      });
+    });
+  });
+
+});
 
 
 // Admin

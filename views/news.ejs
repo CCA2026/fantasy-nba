@@ -1,0 +1,46 @@
+<h1>📊 Market News & Activity</h1>
+
+<section class="card">
+  <h2>🔥 Highest Volume Markets</h2>
+  <table class="table">
+    <thead>
+      <tr><th>Market</th><th>Volume</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      <% volumeMarkets.forEach(m => { %>
+        <tr>
+          <td><a href="/markets/<%= m.id %>"><%= m.title %></a></td>
+          <td><%= m.volume || 0 %> coins</td>
+          <td><%= m.is_resolved ? 'Resolved' : 'Open' %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2>🕒 Most Recent Bets</h2>
+  <ul class="activity-list">
+    <% recentBets.forEach(b => { %>
+      <li>
+        <a href="/user/<%= b.user_id %>"><strong><%= b.username %></strong></a>
+        bet <strong><%= b.amount %> coins</strong> on 
+        <strong><%= b.option_name %></strong> in
+        <a href="/markets/<%= b.market_id %>"><%= b.market_title %></a>
+        <span class="muted">(<%= b.created_at.slice(0,16) %>)</span>
+      </li>
+    <% }) %>
+  </ul>
+</section>
+
+<section class="card">
+  <h2>🆕 Recently Created Markets</h2>
+  <ul class="activity-list">
+    <% newMarkets.forEach(m => { %>
+      <li>
+        <a href="/markets/<%= m.id %>"><%= m.title %></a>
+        <span class="muted">(<%= m.created_at.slice(0,10) %>)</span>
+      </li>
+    <% }) %>
+  </ul>
+</section>
