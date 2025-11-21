@@ -2,44 +2,51 @@
 
 <div class="grid admin-grid">
   <!-- USERS SECTION -->
-  <section class="card">
-    <h2>Users</h2>
-    <table class="table">
-      <thead>
+ <section class="card">
+  <h2>Users</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Balance</th>
+        <th>Admin</th>
+        <th>Banned</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% users.forEach(u => { %>
         <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Balance</th>
-          <th>Admin</th>
-          <th>Banned</th>
-          <th>Actions</th>
+          <td><%= u.id %></td>
+          <td><a href="/user/<%= u.id %>"><%= u.username %></a></td>
+          <td><%= u.balance %></td>
+          <td><%= u.is_admin ? "Yes" : "No" %></td>
+          <td><%= u.is_banned ? "Yes" : "No" %></td>
+
+          <td class="actions">
+
+            <form method="post" action="/admin/set-balance" class="inline">
+              <input type="hidden" name="user_id" value="<%= u.id %>" />
+              <input type="number" name="balance" value="<%= u.balance %>" class="w-10ch" />
+              <button class="btn small">Set</button>
+            </form>
+
+            <form method="post" action="/admin/ban-toggle" class="inline">
+              <input type="hidden" name="user_id" value="<%= u.id %>" />
+              <button class="btn small warn"><%= u.is_banned ? "Unban" : "Ban" %></button>
+            </form>
+
+            <form method="post" action="/admin/delete-user/<%= u.id %>" class="inline">
+              <button class="btn small warn">Delete</button>
+            </form>
+
+          </td>
         </tr>
-      </thead>
-      <tbody>
-        <% users.forEach(u => { %>
-          <tr>
-            <td><%= u.id %></td>
-            <td><a href="/user/<%= user_id %>"><%= username %></a>
-</td>
-            <td><%= u.balance %></td>
-            <td><%= u.is_admin ? 'Yes' : 'No' %></td>
-            <td><%= u.is_banned ? 'Yes' : 'No' %></td>
-            <td class="actions">
-              <form method="post" action="/admin/set-balance" class="inline">
-                <input type="hidden" name="user_id" value="<%= u.id %>"/>
-                <input type="number" name="balance" value="<%= u.balance %>" class="w-10ch"/>
-                <button class="btn small">Set</button>
-              </form>
-              <form method="post" action="/admin/ban-toggle" class="inline">
-                <input type="hidden" name="user_id" value="<%= u.id %>"/>
-                <button class="btn small warn"><%= u.is_banned ? 'Unban' : 'Ban' %></button>
-              </form>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </section>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
 
   <!-- MARKETS SECTION -->
   <section class="card">
