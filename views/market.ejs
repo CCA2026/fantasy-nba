@@ -71,6 +71,10 @@
 
   <% } %>
 </section>
+<% if (user && (user.id === market.creator_id || user.is_admin)) { %>
+  <a class="btn small" href="/markets/<%= market.id %>/edit">✏️ Edit Market</a>
+<% } %>
+
 
 
     <% if (user && (user.is_admin || market.creator_id === user.id) && !market.is_resolved) { %>

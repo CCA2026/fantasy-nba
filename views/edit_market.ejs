@@ -1,0 +1,21 @@
+<h1>Edit Market</h1>
+
+<form method="post" enctype="multipart/form-data" action="/markets/<%= market.id %>/edit" class="card p-3">
+  <label>Title</label>
+  <input type="text" name="title" value="<%= market.title %>" required>
+
+  <label>Description</label>
+  <textarea name="description" required><%= market.description %></textarea>
+
+  <label>Current Image</label><br>
+  <% if (market.image_filename) { %>
+    <img src="/<%= market.image_filename %>" class="edit-preview">
+  <% } else { %>
+    <p class="muted">No image</p>
+  <% } %>
+
+  <label>Upload New Image</label>
+  <input type="file" name="image" accept="image/*">
+
+  <button class="btn">Save Changes</button>
+</form>

@@ -467,6 +467,30 @@ db.run(`CREATE TABLE IF NOT EXISTS comments (
 )`);
 
 
+// ----- USER: Edit Market Page -----
+app.get('/markets/:id/edit', requireLogin, (req, res) => {
+  const marketId = +req.params.id;
+
+  db.get(`SELECT * FROM markets WHERE id=?`, [marketId], (err, market) => {
+    if (err || !market) return res.sendStatus(404);
+
+    // Only creator or admin can edit
+    if (market.creator_id !== req.session.user.id && !req.session.user.is_admin) {
+      req.session.flash = [{ type: 'error', msg: 'You cannot edit this market.' }];
+      return res.redirect(`/markets/${marketId}`);
+    }
+
+    db.all(`SELECT * FROM options WHERE market_id=?`, [marketId], (err2, options) => {
+      res.render('edit_market', {
+        user: currentUser(req),
+        market,
+        options
+      });
+    });
+  });
+});
+
+
 // View / Bet
 app.get('/markets/:id', (req, res) => {
   const id = req.params.id;
@@ -672,6 +696,40 @@ app.post('/markets/:id/comments', requireLogin, (req, res) => {
   });
 });
 
+// ----- USER: Update Market -----
+app.post('/markets/:id/edit', requireLogin, upload.single('image'), (req, res) => {
+  const marketId = +req.params.id;
+  const { title, description } = req.body;
+
+  db.get(`SELECT * FROM markets WHERE id=?`, [marketId], (err, market) => {
+    if (err || !market) return res.sendStatus(404);
+
+    // Only creator or admin may update
+    if (market.creator_id !== req.session.user.id && !req.session.user.is_admin) {
+      req.session.flash = [{ type: 'error', msg: 'You cannot edit this market.' }];
+      return res.redirect(`/markets/${marketId}`);
+    }
+
+    // Handle new image
+    let newImage = market.image_filename;
+    if (req.file) {
+      newImage = 'uploads/' + req.file.filename;
+    }
+
+    db.run(
+      `UPDATE markets 
+       SET title=?, description=?, image_filename=? 
+       WHERE id=?`,
+      [title.trim(), description.trim(), newImage, marketId],
+      (err2) => {
+        if (err2) console.error(err2);
+
+        req.session.flash = [{ type: 'success', msg: 'Market updated!' }];
+        res.redirect(`/markets/${marketId}`);
+      }
+    );
+  });
+});
 
 
 // Admin

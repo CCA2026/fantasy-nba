@@ -19,7 +19,8 @@
         <% users.forEach(u => { %>
           <tr>
             <td><%= u.id %></td>
-            <td><%= u.username %></td>
+            <td><a href="/user/<%= user_id %>"><%= username %></a>
+</td>
             <td><%= u.balance %></td>
             <td><%= u.is_admin ? 'Yes' : 'No' %></td>
             <td><%= u.is_banned ? 'Yes' : 'No' %></td>

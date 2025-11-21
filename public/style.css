@@ -251,3 +251,23 @@ a:hover{text-decoration:underline}
   font-weight: 600;
 }
 
+.profile-stats {
+  background: #fff;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.trade-row {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.trade-row:last-child {
+  border-bottom: none;
+}
+.edit-preview {
+  width: 220px;
+  border-radius: 8px;
+  margin: 10px 0;
+}
