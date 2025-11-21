@@ -12,7 +12,7 @@ const bcrypt = require('bcryptjs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DB_PATH = path.join(__dirname, 'app.db');
+const DB_PATH = '/var/data/app.db';
 
 const expressLayouts = require('express-ejs-layouts');
 app.use(expressLayouts);
@@ -331,6 +331,8 @@ app.post('/faucet', requireLogin, (req, res) => {
 // Home
 app.get('/', requireGate, (req, res) => {
   const filter = req.query.filter || 'all';
+  const category = req.query.category || 'all';
+
   const uid = req.session.user ? req.session.user.id : 0;
 
   let query = 'SELECT * FROM markets ORDER BY datetime(created_at) DESC';
