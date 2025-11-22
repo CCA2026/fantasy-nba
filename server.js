@@ -112,6 +112,10 @@ db.run(`
   )
 `);
 
+db.run(`ALTER TABLE users ADD COLUMN last_ip TEXT`, ()=>{});
+db.run(`ALTER TABLE users ADD COLUMN banned_ip TEXT`, ()=>{});
+
+
 // ----- Uploads -----
 const uploadDir = '/var/data/uploads';
 app.use('/uploads', express.static('/var/data/uploads'));
@@ -316,6 +320,23 @@ app.post('/login', (req, res) => {
       (req.session.flash ||= []).push({ type: 'error', msg: 'Invalid credentials.' });
       return res.redirect('/login');
     }
+
+    // Extract real IP (Render / proxies / local dev)
+const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
+
+// Update last_ip in DB
+db.run(`UPDATE users SET last_ip=? WHERE id=?`, [ip, user.id]);
+
+if (user.banned_ip) {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
+
+  if (ip === user.banned_ip) {
+    (req.session.flash ||= []).push({ type: 'error', msg: 'Your IP is banned.' });
+    return res.redirect('/login');
+  }
+}
+
+
     req.session.user = { id: user.id, username: user.username, is_admin: !!user.is_admin, balance: user.balance };
     (req.session.flash ||= []).push({ type: 'success', msg: 'Welcome back!' });
     const now = Math.floor(Date.now() / 1000);
@@ -332,6 +353,31 @@ app.get('/logout', (req, res) => {
   (req.session.flash ||= []).push({ type: 'success', msg: 'Logged out.' });
   res.redirect('/');
 });
+
+app.post('/admin/ip-ban', requireAdmin, (req, res) => {
+  const { user_id } = req.body;
+
+  db.get(`SELECT last_ip FROM users WHERE id=?`, [user_id], (err, row) => {
+    if (!row || !row.last_ip) {
+      (req.session.flash ||= []).push({ type: 'error', msg: 'User has no recorded IP.' });
+      return res.redirect('/admin');
+    }
+
+    db.run(`UPDATE users SET banned_ip=? WHERE id=?`, [row.last_ip, user_id], (e)=>{
+      (req.session.flash ||= []).push({ type: e?'error':'success', msg: e?'Failed':'IP banned.' });
+      res.redirect('/admin');
+    });
+  });
+});
+app.post('/admin/ip-unban', requireAdmin, (req, res) => {
+  const { user_id } = req.body;
+
+  db.run(`UPDATE users SET banned_ip=NULL WHERE id=?`, [user_id], (e)=>{
+    (req.session.flash ||= []).push({ type: e?'error':'success', msg: e?'Failed':'IP unbanned.' });
+    res.redirect('/admin');
+  });
+});
+
 
 // Faucet
 app.post('/faucet', requireLogin, (req, res) => {

@@ -24,6 +24,8 @@
           <td><%= u.is_admin ? "Yes" : "No" %></td>
           <td><%= u.is_banned ? "Yes" : "No" %></td>
 
+          
+
           <td class="actions">
 
             <form method="post" action="/admin/set-balance" class="inline">
@@ -36,6 +38,19 @@
               <input type="hidden" name="user_id" value="<%= u.id %>" />
               <button class="btn small warn"><%= u.is_banned ? "Unban" : "Ban" %></button>
             </form>
+
+            <form method="post" action="/admin/ip-ban" class="inline">
+  <input type="hidden" name="user_id" value="<%= u.id %>">
+  <button class="btn warn small">IP Ban</button>
+</form>
+
+<form method="post" action="/admin/ip-unban" class="inline">
+  <input type="hidden" name="user_id" value="<%= u.id %>">
+  <button class="btn ghost small">IP Unban</button>
+</form>
+<td><%= u.last_ip || '—' %></td>
+<td><%= u.banned_ip || '—' %></td>
+
 
             <form method="post" action="/admin/delete-user/<%= u.id %>" class="inline">
               <button class="btn small warn">Delete</button>
