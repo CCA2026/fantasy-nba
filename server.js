@@ -257,25 +257,28 @@ app.get('/gate', (req, res) => {
 ;
 });
 app.post('/gate', (req, res) => {
-  const entered = (req.body.password || '').trim();
+  const p1 = (req.body.password1 || '').trim();
+  const p2 = (req.body.password2 || '').trim();
 
-  // Load list of valid passwords (comma-separated)
-  const allowedRaw =
-    process.env.SITE_GATE_PASSWORDS ||
-    process.env.SITE_GATE_PASSWORD || // fallback
-    'letmein';
+  const permanent = process.env.SITE_GATE_PASSWORD || 'letmein';
+  const daily = process.env.SITE_GATE_DAILY || '1234';
 
-  const allowed = allowedRaw.split(',').map(p => p.trim()).filter(Boolean);
-
-  if (allowed.includes(entered)) {
+  if (p1 === permanent && p2 === daily) {
     req.session.gateOk = true;
-    (req.session.flash ||= []).push({ type: 'success', msg: 'Access granted!' });
+    (req.session.flash ||= []).push({
+      type: 'success',
+      msg: 'Access granted!'
+    });
     return res.redirect('/');
-  } else {
-    (req.session.flash ||= []).push({ type: 'error', msg: 'Wrong gate password.' });
-    return res.redirect('/gate');
   }
+
+  (req.session.flash ||= []).push({
+    type: 'error',
+    msg: 'Incorrect permanent or daily password.'
+  });
+  res.redirect('/gate');
 });
+
 
 
 // ---- Auth ----
@@ -354,29 +357,6 @@ app.get('/logout', (req, res) => {
   res.redirect('/');
 });
 
-app.post('/admin/ip-ban', requireAdmin, (req, res) => {
-  const { user_id } = req.body;
-
-  db.get(`SELECT last_ip FROM users WHERE id=?`, [user_id], (err, row) => {
-    if (!row || !row.last_ip) {
-      (req.session.flash ||= []).push({ type: 'error', msg: 'User has no recorded IP.' });
-      return res.redirect('/admin');
-    }
-
-    db.run(`UPDATE users SET banned_ip=? WHERE id=?`, [row.last_ip, user_id], (e)=>{
-      (req.session.flash ||= []).push({ type: e?'error':'success', msg: e?'Failed':'IP banned.' });
-      res.redirect('/admin');
-    });
-  });
-});
-app.post('/admin/ip-unban', requireAdmin, (req, res) => {
-  const { user_id } = req.body;
-
-  db.run(`UPDATE users SET banned_ip=NULL WHERE id=?`, [user_id], (e)=>{
-    (req.session.flash ||= []).push({ type: e?'error':'success', msg: e?'Failed':'IP unbanned.' });
-    res.redirect('/admin');
-  });
-});
 
 
 // Faucet

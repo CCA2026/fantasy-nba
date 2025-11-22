@@ -409,3 +409,55 @@ a:hover{text-decoration:underline}
     text-align: center;
   }
 }
+/* --- GATE PAGE STYLING --- */
+
+.gate-wrapper {
+  max-width: 420px;
+  margin: 40px auto;
+  padding: 25px;
+  background: #000000;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  border: 1px solid #ddd;
+}
+
+.gate-wrapper h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.gate-wrapper label {
+  display: block;
+  margin: 10px 0 5px;
+  font-weight: 500;
+}
+
+.gate-wrapper input[type=password] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+
+.gate-wrapper button {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+/* Mobile improvements */
+@media (max-width: 480px) {
+  .gate-wrapper {
+    margin: 20px;
+    padding: 20px;
+  }
+  .gate-wrapper input,
+  .gate-wrapper button {
+    font-size: 15px;
+  }
+}
