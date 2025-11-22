@@ -271,3 +271,141 @@ a:hover{text-decoration:underline}
   border-radius: 8px;
   margin: 10px 0;
 }
+.activity-list {
+  list-style: none;
+  padding: 0;
+}
+
+.activity-list li {
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.activity-list li:last-child {
+  border-bottom: none;
+}
+
+/* ========================= */
+/*  MOBILE RESPONSIVE STYLES */
+/* ========================= */
+
+@media (max-width: 768px) {
+
+  /* Container padding so content isn't edge-to-edge */
+  .container {
+    padding: 0 12px;
+  }
+
+  /* Stack header items instead of squishing them in a row */
+  .header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .logo {
+    font-size: 1rem;
+    max-width: 100%;
+    word-break: break-word;
+  }
+
+  /* Nav buttons wrap / stack nicely on small screens */
+  .nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .nav .btn,
+  .nav .btn.ghost,
+  .nav form.inline button {
+    flex: 1 1 calc(50% - 0.5rem); /* two per row */
+    text-align: center;
+  }
+
+  /* If you prefer one-per-row, use this instead: */
+  /* .nav .btn,
+     .nav .btn.ghost,
+     .nav form.inline button {
+       flex: 1 1 100%;
+     } */
+
+  .balance {
+    width: 100%;
+    margin-bottom: 0.25rem;
+  }
+
+  /* Market cards: single column on phones */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .market-card img {
+    max-height: 180px;
+    object-fit: cover;
+  }
+
+  /* Filters / search bar: stack vertically */
+  .filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .filters select,
+  .filters input[type="text"],
+  .filters .btn {
+    width: 100%;
+  }
+
+  /* Tables: enable horizontal scroll instead of squishing */
+  .table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table table {
+    width: 100%;
+    min-width: 500px; /* allow scroll on tiny screens */
+  }
+
+  /* Option rows in market page */
+  .option-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .option-main {
+    width: 100%;
+  }
+
+  .bet-form {
+    width: 100%;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .bet-form input[type="number"] {
+    flex: 1;
+  }
+
+  .bet-form .btn {
+    white-space: nowrap;
+  }
+
+  /* Cards spacing */
+  .card {
+    padding: 12px;
+  }
+
+  /* Footer centered on mobile */
+  .footer .container {
+    text-align: center;
+  }
+}
