@@ -75,6 +75,17 @@
   <a class="btn small" href="/markets/<%= market.id %>/edit">✏️ Edit Market</a>
 <% } %>
 
+<% if (user && (user.id === market.creator_id || user.is_admin)) { %>
+  <form method="post" action="/markets/<%= market.id %>/toggle-lock" class="inline">
+    <button class="btn small <%= market.is_locked ? 'warn' : 'good' %>">
+      <%= market.is_locked ? 'Unlock Market' : 'Lock Market' %>
+    </button>
+  </form>
+<% } %>
+
+<% if (market.is_locked) { %>
+  <p class="muted" style="color:#c00;font-weight:bold;">⚠ Betting is locked</p>
+<% } %>
 
 
     <% if (user && (user.is_admin || market.creator_id === user.id) && !market.is_resolved) { %>

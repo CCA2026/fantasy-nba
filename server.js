@@ -38,6 +38,9 @@ db.serialize(() => {
   )`);
   db.run(`ALTER TABLE markets ADD COLUMN category TEXT`, () => {});
 
+  db.run(`ALTER TABLE markets ADD COLUMN is_locked INTEGER DEFAULT 0`, () => {});
+
+
   db.run(`CREATE TABLE IF NOT EXISTS markets(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     creator_id INTEGER NOT NULL,
@@ -564,33 +567,72 @@ app.get('/markets/:id', (req, res) => {
 
 
 app.post('/markets/:id/bet', requireLogin, (req, res) => {
-  const marketId = +req.params.id;
+  const marketId = +req.params.id;     // MUST be first
   const optionId = +req.body.option_id;
   const amount = parseInt(req.body.amount || '0', 10);
-  if (amount <= 0) { (req.session.flash ||= []).push({ type: 'error', msg: 'Amount must be positive.' }); return res.redirect(`/markets/${marketId}`); }
 
-  db.get(`SELECT is_resolved FROM markets WHERE id=?`, [marketId], (e, m) => {
-    if (e || !m) return res.redirect(`/markets/${marketId}`);
-    if (m.is_resolved) { (req.session.flash ||= []).push({ type: 'error', msg: 'Market already resolved.' }); return res.redirect(`/markets/${marketId}`); }
+  if (amount <= 0) {
+    (req.session.flash ||= []).push({
+      type: 'error',
+      msg: 'Amount must be positive.'
+    });
+    return res.redirect(`/markets/${marketId}`);
+  }
 
+  // 🔒 Step 1: Check lock status
+  db.get(`SELECT is_locked, is_resolved FROM markets WHERE id=?`, [marketId], (err, m) => {
+    if (err || !m) return res.redirect(`/markets/${marketId}`);
+
+    if (m.is_locked) {
+      (req.session.flash ||= []).push({
+        type: 'error',
+        msg: 'This market is locked. No bets allowed.'
+      });
+      return res.redirect(`/markets/${marketId}`);
+    }
+
+    if (m.is_resolved) {
+      (req.session.flash ||= []).push({
+        type: 'error',
+        msg: 'Market already resolved.'
+      });
+      return res.redirect(`/markets/${marketId}`);
+    }
+
+    // 🔥 Continue with ORIGINAL BET LOGIC
     db.get(`SELECT balance FROM users WHERE id=?`, [req.session.user.id], (e2, u) => {
       if (e2 || !u || u.balance < amount) {
         (req.session.flash ||= []).push({ type: 'error', msg: 'Insufficient balance.' });
         return res.redirect(`/markets/${marketId}`);
       }
-      db.run(`UPDATE users SET balance = balance - ? WHERE id=?`, [amount, req.session.user.id], (e3) => {
-        if (e3) return res.redirect(`/markets/${marketId}`);
-        req.session.user.balance -= amount;
-        db.run(`UPDATE options SET shares = shares + ? WHERE id=? AND market_id=?`, [amount, optionId, marketId], (e4)=>{
-          if (e4) return res.redirect(`/markets/${marketId}`);
-          db.run(`INSERT INTO trades(user_id, market_id, option_id, amount) VALUES(?,?,?,?)`, [req.session.user.id, marketId, optionId, amount]);
-          (req.session.flash ||= []).push({ type: 'success', msg: `Placed ${amount} coins!` });
-          res.redirect(`/markets/${marketId}`);
+
+      db.run(`UPDATE users SET balance = balance - ? WHERE id=?`,
+        [amount, req.session.user.id],
+        (e3) => {
+
+          if (e3) return res.redirect(`/markets/${marketId}`);
+          req.session.user.balance -= amount;
+
+          db.run(`UPDATE options SET shares = shares + ? WHERE id=? AND market_id=?`,
+            [amount, optionId, marketId],
+            (e4) => {
+              if (e4) return res.redirect(`/markets/${marketId}`);
+
+              db.run(`INSERT INTO trades(user_id, market_id, option_id, amount) VALUES(?,?,?,?)`,
+                [req.session.user.id, marketId, optionId, amount]);
+
+              (req.session.flash ||= []).push({
+                type: 'success',
+                msg: `Placed ${amount} coins!`
+              });
+
+              res.redirect(`/markets/${marketId}`);
+            });
         });
-      });
     });
   });
 });
+
 
 
 
@@ -730,9 +772,39 @@ app.post('/markets/:id/edit', requireLogin, upload.single('image'), (req, res) =
     );
   });
 });
+
+// Toggle lock/unlock (creator OR admin)
+app.post('/markets/:id/toggle-lock', requireLogin, (req, res) => {
+  const marketId = +req.params.id;
+  const uid = req.session.user.id;
+
+  db.get(`SELECT creator_id, is_locked FROM markets WHERE id=?`, [marketId], (err, m) => {
+    if (err || !m) return res.redirect(`/markets/${marketId}`);
+
+    // Only creator or admin can toggle lock
+    if (m.creator_id !== uid && !req.session.user.is_admin) {
+      (req.session.flash ||= []).push({ type: 'error', msg: 'Not authorized.' });
+      return res.redirect(`/markets/${marketId}`);
+    }
+
+    const newVal = m.is_locked ? 0 : 1;
+
+    db.run(`UPDATE markets SET is_locked=? WHERE id=?`, [newVal, marketId], () => {
+      (req.session.flash ||= []).push({
+        type: 'success',
+        msg: newVal ? 'Market locked — betting disabled.' : 'Market unlocked — betting enabled.'
+      });
+      res.redirect(`/markets/${marketId}`);
+    });
+  });
+});
+
 // ======================
 // NEWS PAGE
 // ======================
+
+
+
 app.get('/news', (req, res) => {
 
   // 1. Highest-volume markets
