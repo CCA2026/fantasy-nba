@@ -126,7 +126,7 @@ const storage = multer.diskStorage({
     cb(null, unique);
   }
 });
-const upload = multer({ storage, limits: { fileSize: 2 * 1024 * 1024 } }); // 2MB
+const upload = multer({ storage, limits: { fileSize: 15 * 1024 * 1024 } }); // 2MB
 
 
 
@@ -1042,6 +1042,22 @@ const q = `SELECT id, username, balance FROM users WHERE is_banned = 0 ORDER BY 
    
   });
 });
+
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      (req.session.flash ||= []).push({
+        type: 'error',
+        msg: 'Image too large. Max size is 2MB.'
+      });
+      return res.redirect('back');
+    }
+  }
+
+  console.error(err);
+  res.status(500).send("Server error");
+});
+
 
 // ---- Views ----
 function renderFlash(req, res, next){ next(); }
