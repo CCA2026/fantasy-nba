@@ -260,22 +260,24 @@ app.post('/gate', (req, res) => {
   const p1 = (req.body.password1 || '').trim();
   const p2 = (req.body.password2 || '').trim();
 
-  const permanent = process.env.SITE_GATE_PASSWORD || 'letmein';
-  const daily = process.env.SITE_GATE_DAILY || '1234';
+  // Read env values
+  const permanentRaw = process.env.SITE_GATE_PASSWORD || 'letmein';
+  const dailyRaw = process.env.SITE_GATE_DAILY || '1234';
 
-  if (p1 === permanent && p2 === daily) {
+  // Support multiple permanent passwords separated by commas
+  const permanentList = permanentRaw.split(',').map(x => x.trim());
+  const dailyList = dailyRaw.split(',').map(x => x.trim());
+
+  const okPermanent = permanentList.includes(p1);
+  const okDaily = dailyList.includes(p2);
+
+  if (okPermanent && okDaily) {
     req.session.gateOk = true;
-    (req.session.flash ||= []).push({
-      type: 'success',
-      msg: 'Access granted!'
-    });
+    (req.session.flash ||= []).push({ type: 'success', msg: 'Access granted!' });
     return res.redirect('/');
   }
 
-  (req.session.flash ||= []).push({
-    type: 'error',
-    msg: 'Incorrect permanent or daily password.'
-  });
+  (req.session.flash ||= []).push({ type: 'error', msg: 'Incorrect permanent or daily password.' });
   res.redirect('/gate');
 });
 
