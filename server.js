@@ -271,13 +271,13 @@ app.post('/gate', (req, res) => {
   const okPermanent = permanentList.includes(p1);
   const okDaily = dailyList.includes(p2);
 
-  if (okPermanent && okDaily) {
+  if (okPermanent) {
     req.session.gateOk = true;
     (req.session.flash ||= []).push({ type: 'success', msg: 'Access granted!' });
     return res.redirect('/');
   }
 
-  (req.session.flash ||= []).push({ type: 'error', msg: 'Incorrect permanent or daily password.' });
+  (req.session.flash ||= []).push({ type: 'error', msg: 'Incorrect password.' });
   res.redirect('/gate');
 });
 
